@@ -5,6 +5,7 @@
 #include <stdbool.h>
 
 #include "display.h"
+#include "error.h"
 
 #define TAILLE		8
 
@@ -21,6 +22,7 @@ int traiter_coup(char*);
 int traiter_coup_pion(char*);
 int placer(char, int);
 int retirer(char, int);
+bool existe(bitboard, int);
 
 bitboard pb = 0, pn = 0;
 bitboard cb = 0, cn = 0;
@@ -34,7 +36,8 @@ bitboard db = 0, dn = 0;
 
 bool trait_aux_blancs;
 
-#define COTE		(trait_aux_blancs ? BLANCS : NOIRS) 
+#define COTE_COURANT (trait_aux_blancs ? BLANCS : NOIRS) 
+#define AUTRE_COTE   (trait_aux_blancs ? NOIRS : BLANCS)
 
 int main(void) {
 	pb = 0x000000000000ff00;
@@ -91,7 +94,7 @@ int main(void) {
 	char sortie = 0, res = 0;
 	int loc = 0;
 	trait_aux_blancs = true;
-	
+
 	do {
 		afficher();
 		puts("Donnez une coordonnée");
@@ -103,7 +106,7 @@ int main(void) {
 			if (!res) {
 				trait_aux_blancs = !trait_aux_blancs;
 			} else {
-				puts("Erreur rejouez !");
+				printf("Résultat : %s\n", error(res));
 			}
 		} else if (entree[0] == 'e' && entree[1] == 'x' && entree[2] == 'i' && entree[3] == 't') {
 			sortie = 1;
@@ -138,22 +141,34 @@ int traiter_coup(char* coup) {
  * Si le coup est valide, la fonction renvoie la position de la case à l'initiative
  */
 int traiter_coup_pion(char* coup) {
-	if (pos(coup) < 0 && coup[1] != 'x') return -1;
+	if (pos(coup) < 0 && coup[1] != 'x') return ERR_FORMAT;
 
 	char origine[3] = {0}, temp[3] = {0};
+	bitboard pion, npion;
 	
 	/* dxe4 */
 	if (coup[1] == 'x') {
 		printf("destination : %s\n", coup + 2);
-		if (recuperer(pos(coup + 2)) == VIDE) return -1;
+		/* si la destination est un pion de la couleur courante erreur */
+		if (existe(COTE_COURANT, pos(coup + 2))) return ERR_DESTINATION;
+		/* si la destination n'est pas de l'autre couleur erreur*/
+		if (!existe(AUTRE_COTE, pos(coup + 2))) return ERR_DESTINATION;
 		
 		origine[0] = coup[0];
-		origine[1] = coup[3] - 1;
+		origine[1] = coup[3] - (trait_aux_blancs ? 1 : -1);
 		
-		if (recuperer(pos(origine)) == VIDE) return -1;
+		printf("origine : %s\n", origine);
 		
-		bitboard pion = (1ULL << pos(origine));
-		bitboard npion = pion << (8 + (coup[2] - coup[0])) * (trait_aux_blancs ? 1 : -1);
+		/* si l'origine n'est pas de la couleur courante erreur*/
+		if (!existe(COTE_COURANT, pos(origine))) return ERR_ORIGINE;
+		
+		pion = (1ULL << pos(origine));
+		
+		if (trait_aux_blancs) {
+			npion = pion << (8 + (coup[2] - coup[0]));
+		} else {
+			npion = pion >> (8 + (coup[0] - coup[2]));
+		}
 		
 		/* On met à jour le déplacement du pion, puis on force l'inversion des plateaux étrangers*/
 		if (trait_aux_blancs) {		
@@ -172,18 +187,16 @@ int traiter_coup_pion(char* coup) {
 			db &= ~pn;
 		}
 	} else { /* d4 */
-		if (recuperer(pos(coup)) != VIDE) return -1;
-		
-		bitboard pion, npion;
+		if (existe(BLANCS | NOIRS, pos(coup))) return ERR_DESTINATION;
 		
 		origine[0] = coup[0];
 		temp[0] = coup[0];
 		if (coup[1] ==  (trait_aux_blancs ? '4' : '5')) {
 			origine[1] = coup[1] - 2 * (trait_aux_blancs ? 1 : -1);
 			temp[1] = coup[1] - (trait_aux_blancs ? 1 : -1);
-			printf("orig1: %s, orig2: %s\n", origine, temp);
-			if (recuperer(pos(origine)) == VIDE
-				|| recuperer(pos(temp)) != VIDE) {
+			printf("origine: %s, temp: %s\n", origine, temp);
+			if (!existe(COTE_COURANT, pos(origine))
+				|| existe(COTE_COURANT, pos(temp))) {
 				origine[1] = temp[1];
 				
 				pion = (1ULL << pos(origine));
@@ -211,7 +224,7 @@ int traiter_coup_pion(char* coup) {
 		}
 		
 		printf("origine : %s, %c\n", origine, recuperer(pos(origine)));
-		if (recuperer(pos(origine)) == VIDE) return -1;
+		if (!existe(COTE_COURANT, pos(origine))) return ERR_ORIGINE;
 		
 		
 		/* On met à jour le déplacement du pion, puis on force l'inversion des plateaux étrangers*/
@@ -222,7 +235,7 @@ int traiter_coup_pion(char* coup) {
 		}
 	}
 	
-	return 0; 
+	return REUSSITE; 
 }
 
 int afficher(void) {
@@ -250,8 +263,8 @@ int pos(char* loc) {
 	return -1;
 }
 
-int existe(bitboard bb, int pos) {
-	return (bb & (1ULL << pos));
+bool existe(bitboard bb, int pos) {
+	return (bb & (1ULL << pos)) != 0ULL;
 }
 
 int placer(char piece, int pos) {
