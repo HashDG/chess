@@ -6,53 +6,82 @@
 
 #include "display.h"
 #include "error.h"
+#include "coup.h"
 
 #define TAILLE		8
-
-/*
- * Les bits à gauche sont le haut du plateau 
- */
-typedef uint64_t bitboard ;
 
 int premier_bit(bitboard);
 int dernier_bit(bitboard);
 char recuperer(int);
 int pos(char*);
-int traiter_coup(char*);
-int traiter_coup_pion(char*);
-int traiter_coup_tour(char*);
 int placer(char, int);
 int retirer(char, int);
 bool existe(bitboard, int);
-
-bitboard pb = 0, pn = 0;
-bitboard cb = 0, cn = 0;
-bitboard fb = 0, fn = 0;
-bitboard tb = 0, tn = 0;
-bitboard rb = 0, rn = 0;
-bitboard db = 0, dn = 0;
-
-#define BLANCS		(pb | cb | fb | tb | rb | db)
-#define NOIRS		(pn | cn | fn | tn | rn | dn)
-
-bool trait_aux_blancs;
-
-#define COTE_COURANT (trait_aux_blancs ? BLANCS : NOIRS) 
-#define AUTRE_COTE   (trait_aux_blancs ? NOIRS : BLANCS)
+uint16_t loc(int);
 
 int main(void) {
-	pb = 0x000000000000ff00;
-	pn = 0x00ff000000000000;
-	cb = 0x0000000000000042;
-	cn = 0x4200000000000000;
-	fb = 0x0000000000000024;
-	fn = 0x2400000000000000;
-	tb = 0x0000000000000081;
-	tn = 0x8100000000000000;
-	rb = 0x0000000000000010;
-	rn = 0x1000000000000000;
-	db = 0x0000000000000008;
-	dn = 0x0800000000000000;
+	
+	COUP_plateau_s p;
+	
+	p.blancs.pions = 	0x000000000000ff00;
+	p.noirs.pions = 	0x00ff000000000000;
+	p.blancs.cavaliers = 0x0000000000000042;
+	p.noirs.cavaliers = 0x4200000000000000;
+	p.blancs.fous = 	0x0000000000000024;
+	p.noirs.fous = 		0x2400000000000000;
+	p.blancs.tours = 	0x0000000000000081;
+	p.noirs.tours = 	0x8100000000000000;
+	p.blancs.roi = 		0x0000000000000010;
+	p.noirs.roi = 		0x1000000000000000;
+	p.blancs.dame = 	0x0000000000000008;
+	p.noirs.dame = 		0x0800000000000000;
+	p.pieces_blanches = 0x000000000000ffff;
+	p.pieces_noires =   0xffff000000000000;
+	
+	int nb_coups = 300;
+	coup coups[300] = {0};
+	
+	p.cote = B;
+	lister_coups(p, &nb_coups, coups);
+	puts("hehe");
+	
+	printf("nb %d\n", nb_coups);
+	
+	for (int i = nb_coups; i < 300; i++) {
+		char src[3] = {0}, dst[3] = {0};
+		
+		src[0] = loc(COUP_SOURCE(coups[i])) >> 8;
+		src[1] = loc(COUP_SOURCE(coups[i])) & 0xff;
+		dst[0] = loc(COUP_DEST(coups[i])) >> 8;
+		dst[1] = loc(COUP_DEST(coups[i])) & 0xff;
+		
+		printf("Origine : %s, destination : %s\n", src, dst);
+	}
+	
+	puts("##############################");
+	puts("Passage aux noirs");
+	puts("##############################");
+	
+	nb_coups = 300;
+	p.cote = N;
+	lister_coups(p, &nb_coups, coups);
+	puts("hehe");
+	
+	printf("nb %d\n", nb_coups);
+	
+	for (int i = nb_coups; i < 300; i++) {
+		char src[3] = {0}, dst[3] = {0};
+		
+		src[0] = loc(COUP_SOURCE(coups[i])) >> 8;
+		src[1] = loc(COUP_SOURCE(coups[i])) & 0xff;
+		dst[0] = loc(COUP_DEST(coups[i])) >> 8;
+		dst[1] = loc(COUP_DEST(coups[i])) & 0xff;
+		
+		printf("Origine : %s, destination : %s\n", src, dst);
+	}
+	
+	return 0;
+	
 	/*
 	printf("Première position des pions blancs : %d\n", premier_bit(pb));
 	printf("Première position des pions noirs  : %d\n", premier_bit(pn));
@@ -90,7 +119,7 @@ int main(void) {
 	printf("- recuperer(%02d) : %c\n", pos(loc), recuperer(pos(loc)));
 	*/
 	
-	
+	/*
 	char entree[5] = {0};
 	char sortie = 0, res = 0;
 	int loc = 0;
@@ -117,232 +146,9 @@ int main(void) {
 	} while (!sortie);
 
 	puts("Sortie !");
-	
+	*/
 }
-
 /*
- *	Pc		=> Pièce (sauf pion) Coordonnées (a1 -> h8)
- *	PCxc	=> Pièce (sauf pion) Colonne (si deux pièces peuvent le jouer) X (prise) Coordonnées 
- *  Pcc+ 	=> échec
- *  Pcc	
- * 	On va big utiliser regex ébauche de regex ([rRdDcCtTfF]|)([a-h][1-8]|[a-h]|[1-8])(?:(x|)([a-h][1-8])|)
- */
-int traiter_coup(char* coup) {
-	int resultat = 0;
-	
-	// prise par un pion
-	if (coup[0] == TOUR) {
-		coup++;
-		if (pos(coup) < 0 && coup[1] != 'x') return ERR_FORMAT;
-		resultat = traiter_coup_tour(coup);
-	} else {
-		if (pos(coup) < 0 && coup[1] != 'x') return ERR_FORMAT;
-		resultat = traiter_coup_pion(coup);
-	}
-	
-	return resultat;
-}
-
-/*
- * Si le coup est valide, la fonction renvoie la position de la case à l'initiative
- */
-int traiter_coup_pion(char* coup) {
-	char origine[3] = {0}, temp[3] = {0};
-	bitboard pion, npion;
-	
-	/* dxe4 */
-	if (coup[1] == 'x') {
-		printf("destination : %s\n", coup + 2);
-		/* si la destination est un pion de la couleur courante erreur */
-		if (existe(COTE_COURANT, pos(coup + 2))) return ERR_DESTINATION;
-		/* si la destination n'est pas de l'autre couleur erreur*/
-		if (!existe(AUTRE_COTE, pos(coup + 2))) return ERR_DESTINATION;
-		
-		origine[0] = coup[0];
-		origine[1] = coup[3] - (trait_aux_blancs ? 1 : -1);
-		
-		printf("origine : %s\n", origine);
-		
-		/* si l'origine n'est pas de la couleur courante erreur*/
-		if (!existe(COTE_COURANT, pos(origine))) return ERR_ORIGINE;
-		
-		pion = (1ULL << pos(origine));
-		
-		if (trait_aux_blancs) {
-			npion = pion << (8 + (coup[2] - coup[0]));
-		} else {
-			npion = pion >> (8 + (coup[0] - coup[2]));
-		}
-		
-		/* On met à jour le déplacement du pion, puis on force l'inversion des plateaux étrangers*/
-		if (trait_aux_blancs) {		
-			pb = (pb & ~pion) | npion;
-			pn &= ~pb;
-			cn &= ~pb;
-			fn &= ~pb;
-			tn &= ~pb;
-			dn &= ~pb;
-		} else {
-			pn = (pn & ~pion) | npion;
-			pb &= ~pn;
-			cb &= ~pn;
-			fb &= ~pn;
-			tb &= ~pn;
-			db &= ~pn;
-		}
-	} else { /* d4 */
-		if (existe(BLANCS | NOIRS, pos(coup))) return ERR_DESTINATION;
-		
-		origine[0] = coup[0];
-		temp[0] = coup[0];
-		if (coup[1] ==  (trait_aux_blancs ? '4' : '5')) {
-			origine[1] = coup[1] - 2 * (trait_aux_blancs ? 1 : -1);
-			temp[1] = coup[1] - (trait_aux_blancs ? 1 : -1);
-			printf("origine: %s, temp: %s\n", origine, temp);
-			if (!existe(COTE_COURANT, pos(origine))
-				|| existe(COTE_COURANT, pos(temp))) {
-				origine[1] = temp[1];
-				
-				pion = (1ULL << pos(origine));
-				if (trait_aux_blancs) {
-					npion = pion << 8;
-				} else {
-					npion = pion >> 8;
-				}
-			} else {
-				pion = (1ULL << pos(origine));
-				if (trait_aux_blancs) {
-					npion = pion << 16;
-				} else {
-					npion = pion >> 16;
-				}
-			}
-		} else {
-			origine[1] = coup[1] - (trait_aux_blancs ? 1 : -1);
-			pion = (1ULL << pos(origine));
-			if (trait_aux_blancs) {
-				npion = pion << 8;
-			} else {
-				npion = pion >> 8;
-			}
-		}
-		
-		printf("origine : %s, %c\n", origine, recuperer(pos(origine)));
-		if (!existe(COTE_COURANT, pos(origine))) return ERR_ORIGINE;
-		
-		
-		/* On met à jour le déplacement du pion, puis on force l'inversion des plateaux étrangers*/
-		if (trait_aux_blancs) {
-			pb = (pb & ~pion) | npion;
-		} else {
-			pn = (pn & ~pion) | npion;
-		}
-	}
-	
-	return REUSSITE; 
-}
-
-int traiter_coup_tour(char* coup) {
-	char origine[3] = {0}, temp[3] = {0};
-	bitboard pion, npion;
-	
-	if (coup[0] == 'x') { /* Txe4 */
-		printf("destination : %s\n", coup + 2);
-		/* si la destination est un pion de la couleur courante erreur */
-		if (existe(COTE_COURANT, pos(coup + 2))) return ERR_DESTINATION;
-		/* si la destination n'est pas de l'autre couleur erreur*/
-		if (!existe(AUTRE_COTE, pos(coup + 2))) return ERR_DESTINATION;
-		
-		origine[0] = coup[0];
-		origine[1] = coup[3] - (trait_aux_blancs ? 1 : -1);
-		
-		printf("origine : %s\n", origine);
-		
-		/* si l'origine n'est pas de la couleur courante erreur*/
-		if (!existe(COTE_COURANT, pos(origine))) return ERR_ORIGINE;
-		
-		pion = (1ULL << pos(origine));
-		
-		if (trait_aux_blancs) {
-			npion = pion << (8 + (coup[2] - coup[0]));
-		} else {
-			npion = pion >> (8 + (coup[0] - coup[2]));
-		}
-		
-		/* On met à jour le déplacement du pion, puis on force l'inversion des plateaux étrangers*/
-		if (trait_aux_blancs) {		
-			pb = (pb & ~pion) | npion;
-			pn &= ~pb;
-			cn &= ~pb;
-			fn &= ~pb;
-			tn &= ~pb;
-			dn &= ~pb;
-		} else {
-			pn = (pn & ~pion) | npion;
-			pb &= ~pn;
-			cb &= ~pn;
-			fb &= ~pn;
-			tb &= ~pn;
-			db &= ~pn;
-		}
-	} else if (coup[1] == 'x') { /* Taxd4 */
-	
-	
-	
-	} else if (coup[1] >= 'a' && coup[1] <= 'h') /* Tad4 */
-	
-	} else { /* Td4 */
-		if (existe(BLANCS | NOIRS, pos(coup))) return ERR_DESTINATION;
-		
-		origine[0] = coup[0];
-		temp[0] = coup[0];
-		if (coup[1] ==  (trait_aux_blancs ? '4' : '5')) {
-			origine[1] = coup[1] - 2 * (trait_aux_blancs ? 1 : -1);
-			temp[1] = coup[1] - (trait_aux_blancs ? 1 : -1);
-			printf("origine: %s, temp: %s\n", origine, temp);
-			if (!existe(COTE_COURANT, pos(origine))
-				|| existe(COTE_COURANT, pos(temp))) {
-				origine[1] = temp[1];
-				
-				pion = (1ULL << pos(origine));
-				if (trait_aux_blancs) {
-					npion = pion << 8;
-				} else {
-					npion = pion >> 8;
-				}
-			} else {
-				pion = (1ULL << pos(origine));
-				if (trait_aux_blancs) {
-					npion = pion << 16;
-				} else {
-					npion = pion >> 16;
-				}
-			}
-		} else {
-			origine[1] = coup[1] - (trait_aux_blancs ? 1 : -1);
-			pion = (1ULL << pos(origine));
-			if (trait_aux_blancs) {
-				npion = pion << 8;
-			} else {
-				npion = pion >> 8;
-			}
-		}
-		
-		printf("origine : %s, %c\n", origine, recuperer(pos(origine)));
-		if (!existe(COTE_COURANT, pos(origine))) return ERR_ORIGINE;
-		
-		
-		/* On met à jour le déplacement du pion, puis on force l'inversion des plateaux étrangers*/
-		if (trait_aux_blancs) {
-			pb = (pb & ~pion) | npion;
-		} else {
-			pn = (pn & ~pion) | npion;
-		}
-	}
-	
-	return REUSSITE;
-}
-
 int afficher(void) {
 	for (int i = TAILLE; i > 0; i--) {
 		for (int j = 0; j < TAILLE; j++) {
@@ -350,11 +156,11 @@ int afficher(void) {
 		}
 		printf("\n");
 	}
-}
+}*/
 
 /*
  *	a1 : 0, b1 : 1, c1 : 2 ... h8 : 63
- */ 
+ *
 int pos(char* loc) {
 	char lettre = loc[0], chiffre = loc[1];
 	
@@ -366,12 +172,17 @@ int pos(char* loc) {
 		}
 	}
 	return -1;
-}
+}*/
 
+uint16_t loc(int a) {
+	char lettre = a % 8 + 'a', chiffre = a / 8 + '1';
+	return lettre << 8 | chiffre;
+}
+/*
 bool existe(bitboard bb, int pos) {
 	return (bb & (1ULL << pos)) != 0ULL;
-}
-
+}*/
+/*
 int placer(char piece, int pos) {
 	switch (piece) {
 	case PION:
@@ -460,7 +271,7 @@ int dernier_bit(bitboard bb) {
 	return (int) log2(bb);
 }
 
-
+*/
 
 
 
