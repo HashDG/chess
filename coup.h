@@ -28,6 +28,7 @@ typedef enum {
 	C_NULL = 8
 } COUP_type_e;
 
+
 #define COUP_SOURCE(coup)	(coup & 0x3f)
 #define COUP_DEST(coup)		((coup & 0xfc0) >> 6)
 #define COUP_PIECE(coup)	((coup & 0x7000) >> 12)
@@ -35,6 +36,12 @@ typedef enum {
 #define COUP_CAPT(coup)		((coup & 0x1c0000) >> 18)
 #define COUP_TYPE(coup)		((coup & 0x1e00000) >> 21)
 
+#define COUP(source, dest, piece, promo, capt, type) ((source & 0x3f) 	   \
+												|    ((dest & 0x3f) << 6)  \
+												| 	 ((piece & 0x7) << 12) \
+												|    ((promo & 0x7) << 15) \
+												|    ((capt & 0x7) << 18)  \
+												|    ((type & 0xf) << 21))
 typedef struct {
 	struct {
 		bitboard pions;
@@ -61,5 +68,6 @@ typedef struct {
 #define N 	1
 
 int lister_coups(COUP_plateau_s p, int* taille, coup* coups);
+int appliquer_coup(coup, COUP_plateau_s*, int); 
 
 #endif /* COUP_H */

@@ -3,14 +3,8 @@
 #include "coup.h"
 #include "error.h"
 
-#define COUP(source, dest, piece, promo, capt, type) ((source & 0x3f) 		\
-																	| ((dest & 0x3f) << 6)  \
-																	| ((piece & 0x7) << 12) \
-																	| ((promo & 0x7) << 13) \
-																	| ((capt & 0x7) << 18)  \
-																	| ((type & 0xf) << 21))
-
-int lister_coups_pions(bitboard pions, COUP_plateau_s plateau, int cote, int* taille, coup* coups);
+int lister_coups_pions(COUP_plateau_s plateau, int cote, int* taille, coup* coups);
+int lister_coups_tours(COUP_plateau_s plateau, int cote, int* taille, coup* coups);
 int peek_lsb(bitboard*);
 int pop_lsb(bitboard*);
 int peek_msb(bitboard*);
@@ -19,9 +13,15 @@ int lig(int);
 int col(int);
 
 int lister_coups(COUP_plateau_s p, int* taille, coup* coups) {
+	int resultat;
 	
-	return lister_coups_pions(p, p.cote, taille, coups);
+	resultat = lister_coups_pions(p, p.cote, taille, coups);
 	
+	if (resultat == REUSSITE) {
+		resultat = lister_coups_tours(p, p.cote, taille, coups);
+	}
+	
+	return resultat;
 }
 
 int lister_coups_tours(COUP_plateau_s p, int cote, int* taille, coup* coups) {
@@ -36,6 +36,7 @@ int lister_coups_tours(COUP_plateau_s p, int cote, int* taille, coup* coups) {
 	 *
 	 * fin-pour
 	 */
+	 return REUSSITE;
 }
 
 int lister_coups_pions(COUP_plateau_s p, int cote, int* taille, coup* coups) {
@@ -47,12 +48,12 @@ int lister_coups_pions(COUP_plateau_s p, int cote, int* taille, coup* coups) {
 	
 	if (cote == B) {
 		temp = pions = p.blancs.pions;
-		pieces_adverses = plateau.pieces_noires;
-		pieces_joueur = plateau.pieces_blanches;
+		pieces_adverses = p.pieces_noires;
+		pieces_joueur = p.pieces_blanches;
 	} else {
 		temp = pions = p.noirs.pions;
-		pieces_adverses = plateau.pieces_blanches;
-		pieces_joueur = plateau.pieces_noires;
+		pieces_adverses = p.pieces_blanches;
+		pieces_joueur = p.pieces_noires;
 	}
 	
 	while (temp && *taille > 0) {
@@ -117,6 +118,45 @@ int lister_coups_pions(COUP_plateau_s p, int cote, int* taille, coup* coups) {
 	return REUSSITE;
 }
 
+int appliquer_coup(coup c, COUP_plateau_s* p, int cote) {
+	int source, dest, piece, promo, capt, type;
+	bitboard tmp;
+	 
+	source = COUP_SOURCE(c);
+	dest = COUP_DEST(c);
+	piece = COUP_PIECE(c);
+	promo = COUP_PROMO(c);
+	capt = COUP_CAPT(c);
+	type = COUP_TYPE(c);
+	
+	printf("COUP, src : %d, dest : %d, piece : %d\n", source, dest, piece);
+	
+	switch (piece) {
+	case P_PION:
+		if (cote == B) {
+			p->blancs.pions &= ~(1ULL << source);
+			p->blancs.pions |= (1ULL << dest);
+			p->noirs.pions &= ~p->blancs.pions;
+			p->blancs.cavaliers &= ~p->blancs.pions;
+			p->noirs.fous &= ~p->blancs.pions;
+			p->noirs.tours &= ~p->blancs.pions;
+			p->noirs.dame &= ~p->blancs.pions;
+			p->pieces_noires &= ~p->blancs.pions;
+		} else {
+			p->noirs.pions &= ~(1ULL << source);
+			p->noirs.pions |= (1ULL << dest);
+			p->blancs.pions &= ~p->noirs.pions;
+			p->blancs.cavaliers &= ~p->noirs.pions;
+			p->blancs.fous &= ~p->noirs.pions;
+			p->blancs.tours &= ~p->noirs.pions;
+			p->blancs.dame &= ~p->noirs.pions;
+			p->pieces_blanches &= ~p->noirs.pions;
+		}
+	}
+	
+	return REUSSITE;
+}
+
 int lig(int pos) {
 	return pos / 8;
 }
@@ -155,12 +195,12 @@ int pop_lsb(bitboard* b) {
 }
 
 int peek_msb(bitboard* b) {
-	int index = 63 - __builtin_clzll(lsb);
+	int index = 63 - __builtin_clzll(*b);
 	return index;
 }
 
 int pop_msb(bitboard* b) {
-	int index = 63 - __builtin_clzll(lsb);
+	int index = 63 - __builtin_clzll(*b);
 	*b &= ~(1ULL << index);
 	return index;
 }

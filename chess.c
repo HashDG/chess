@@ -43,7 +43,6 @@ int main(void) {
 	
 	p.cote = B;
 	lister_coups(p, &nb_coups, coups);
-	puts("hehe");
 	
 	printf("nb %d\n", nb_coups);
 	
@@ -79,6 +78,17 @@ int main(void) {
 		
 		printf("Origine : %s, destination : %s\n", src, dst);
 	}
+	
+	afficher(p);
+	
+	puts("##############################");
+	puts("Appliquer un coup");
+	puts("##############################");
+	
+	coup c = COUP(pos("c7"), pos("c3"), P_PION, 0, 0, C_NORMAL);
+	appliquer_coup(c, &p, N);
+	
+	afficher(p);
 	
 	return 0;
 	
@@ -148,19 +158,11 @@ int main(void) {
 	puts("Sortie !");
 	*/
 }
-/*
-int afficher(void) {
-	for (int i = TAILLE; i > 0; i--) {
-		for (int j = 0; j < TAILLE; j++) {
-			printf(" %c ", recuperer( (i - 1) * TAILLE + j));
-		}
-		printf("\n");
-	}
-}*/
+
 
 /*
  *	a1 : 0, b1 : 1, c1 : 2 ... h8 : 63
- *
+ */
 int pos(char* loc) {
 	char lettre = loc[0], chiffre = loc[1];
 	
@@ -172,12 +174,13 @@ int pos(char* loc) {
 		}
 	}
 	return -1;
-}*/
+}
 
 uint16_t loc(int a) {
 	char lettre = a % 8 + 'a', chiffre = a / 8 + '1';
 	return lettre << 8 | chiffre;
 }
+
 /*
 bool existe(bitboard bb, int pos) {
 	return (bb & (1ULL << pos)) != 0ULL;
