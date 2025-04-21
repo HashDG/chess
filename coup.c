@@ -3,32 +3,54 @@
 #include "coup.h"
 #include "error.h"
 
-#define COUP(source, dest, piece, promo, capt, type) ((source & 0x3f) | ((dest & 0x3f) << 6) | ((piece & 0x7) << 12) | ((promo & 0x7) << 13) | ((capt & 0x7) << 18) | ((type & 0xf) << 21))
+#define COUP(source, dest, piece, promo, capt, type) ((source & 0x3f) 		\
+																	| ((dest & 0x3f) << 6)  \
+																	| ((piece & 0x7) << 12) \
+																	| ((promo & 0x7) << 13) \
+																	| ((capt & 0x7) << 18)  \
+																	| ((type & 0xf) << 21))
 
 int lister_coups_pions(bitboard pions, COUP_plateau_s plateau, int cote, int* taille, coup* coups);
-int pop_lsb(bitboard* b);
+int peek_lsb(bitboard*);
+int pop_lsb(bitboard*);
+int peek_msb(bitboard*);
+int pop_msb(bitboard*);
 int lig(int);
 int col(int);
 
 int lister_coups(COUP_plateau_s p, int* taille, coup* coups) {
-	if (p.cote == B) {
-		return lister_coups_pions(p.blancs.pions, p, p.cote, taille, coups);
-	} else {
-		return lister_coups_pions(p.noirs.pions, p, p.cote, taille, coups);
-	}
+	
+	return lister_coups_pions(p, p.cote, taille, coups);
+	
 }
 
-int lister_coups_pions(bitboard pions, COUP_plateau_s plateau, int cote, int* taille, coup* coups) {
-	bitboard temp = pions;
+int lister_coups_tours(COUP_plateau_s p, int cote, int* taille, coup* coups) {
+	/************************************************************************** 
+	 * pour chaque tours de la bonne couleur
+	 * 	traitement par direction:
+	 *			-> charger le masque d'orientation
+	 *			-> masque sur tous les pions adverses et sur mes pièces 
+	 *			-> peek_lsb / msb sur les masques
+	 *			boucle insertion dans les coups
+	 *
+	 *
+	 * fin-pour
+	 */
+}
+
+int lister_coups_pions(COUP_plateau_s p, int cote, int* taille, coup* coups) {
+	bitboard temp, pions;
 	bitboard pieces_adverses;
 	bitboard pieces_joueur;
 	bitboard avancement = 0;
 	int source = 0, dest = 0;
 	
 	if (cote == B) {
+		temp = pions = p.blancs.pions;
 		pieces_adverses = plateau.pieces_noires;
 		pieces_joueur = plateau.pieces_blanches;
 	} else {
+		temp = pions = p.noirs.pions;
 		pieces_adverses = plateau.pieces_blanches;
 		pieces_joueur = plateau.pieces_noires;
 	}
@@ -119,6 +141,12 @@ char recuperer(int indice, COUP_plateau_s plateau) {
 	else return P_VIDE;
 }
 
+int peek_lsb(bitboard* b) {
+	bitboard lsb = *b & -(*b);
+	int index = __builtin_ctzll(lsb);
+	return index;
+}
+
 int pop_lsb(bitboard* b) {
 	bitboard lsb = *b & -(*b);
 	int index = __builtin_ctzll(lsb);
@@ -126,7 +154,16 @@ int pop_lsb(bitboard* b) {
 	return index;
 }
 
+int peek_msb(bitboard* b) {
+	int index = 63 - __builtin_clzll(lsb);
+	return index;
+}
 
+int pop_msb(bitboard* b) {
+	int index = 63 - __builtin_clzll(lsb);
+	*b &= ~(1ULL << index);
+	return index;
+}
 
 
 
