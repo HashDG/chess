@@ -9,3 +9,5 @@ all: chess.o coup.o
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
+clean:
+	rm *.o $(EXE)
