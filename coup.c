@@ -3,6 +3,8 @@
 #include "coup.h"
 #include "error.h"
 
+#include "tour.h"
+
 int lister_coups_pions(COUP_plateau_s plateau, int cote, int* taille, coup* coups);
 int lister_coups_tours(COUP_plateau_s plateau, int cote, int* taille, coup* coups);
 int peek_lsb(bitboard*);
@@ -24,7 +26,21 @@ int lister_coups(COUP_plateau_s p, int* taille, coup* coups) {
 	return resultat;
 }
 
+
+
 int lister_coups_tours(COUP_plateau_s p, int cote, int* taille, coup* coups) {
+	bitboard temp, tours;
+	int source;
+	
+	if (cote == B) {
+		temp = tours = p.blancs.tours;
+	} else {
+		temp = tours = p.noirs.tours;
+	}
+	
+	source = pop_lsb(&temp);
+	printf("Origine : %d, nord: %lx, sud : %lx, est : %lx, ouest : %lx\n", source, TOUR_NORD(source), TOUR_SUD(source), TOUR_EST(source), TOUR_OUEST(source));
+	
 	/************************************************************************** 
 	 * pour chaque tours de la bonne couleur
 	 * 	traitement par direction:
@@ -55,6 +71,8 @@ int lister_coups_pions(COUP_plateau_s p, int cote, int* taille, coup* coups) {
 		pieces_adverses = p.pieces_blanches;
 		pieces_joueur = p.pieces_noires;
 	}
+	
+	printf("Dans lister coup : %x, %x\n", pieces_adverses, pieces_joueur);
 	
 	while (temp && *taille > 0) {
 		source = pop_lsb(&temp);
@@ -89,13 +107,13 @@ int lister_coups_pions(COUP_plateau_s p, int cote, int* taille, coup* coups) {
 				avancement = ((pions & (1ULL << source)) << 9) & pieces_adverses;
 				if (avancement) {
 					dest = source + 9;
-					coups[--(*taille)] = COUP(source, dest, P_PION, P_VIDE, P_VIDE, C_NORMAL);
+					coups[--(*taille)] = COUP(source, dest, P_PION, P_VIDE, P_VIDE, C_CAPTURE);
 				}
 			} else if (cote == N && lig(source) > 0) {
 				avancement = ((pions & (1ULL << source)) >> 7) & pieces_adverses;
 				if (avancement) {
 					dest = source - 7;
-					coups[--(*taille)] = COUP(source, dest, P_PION, P_VIDE, P_VIDE, C_NORMAL);
+					coups[--(*taille)] = COUP(source, dest, P_PION, P_VIDE, P_VIDE, C_CAPTURE);
 				}
 			}
 		}
@@ -104,13 +122,13 @@ int lister_coups_pions(COUP_plateau_s p, int cote, int* taille, coup* coups) {
 				avancement = ((pions & (1ULL << source)) << 7) & pieces_adverses;
 				if (avancement) {
 					dest = source + 7;
-					coups[--(*taille)] = COUP(source, dest, P_PION, P_VIDE, P_VIDE, C_NORMAL);
+					coups[--(*taille)] = COUP(source, dest, P_PION, P_VIDE, P_VIDE, C_CAPTURE);
 				}
 			} else if (cote == N && lig(source) > 0) {
 				avancement = ((pions & (1ULL << source)) >> 9) & pieces_adverses;
 				if (avancement) {
 					dest = source - 9;
-					coups[--(*taille)] = COUP(source, dest, P_PION, P_VIDE, P_VIDE, C_NORMAL);
+					coups[--(*taille)] = COUP(source, dest, P_PION, P_VIDE, P_VIDE, C_CAPTURE);
 				}
 			}
 		}		
@@ -136,22 +154,30 @@ int appliquer_coup(coup c, COUP_plateau_s* p, int cote) {
 		if (cote == B) {
 			p->blancs.pions &= ~(1ULL << source);
 			p->blancs.pions |= (1ULL << dest);
-			p->noirs.pions &= ~p->blancs.pions;
-			p->blancs.cavaliers &= ~p->blancs.pions;
-			p->noirs.fous &= ~p->blancs.pions;
-			p->noirs.tours &= ~p->blancs.pions;
-			p->noirs.dame &= ~p->blancs.pions;
-			p->pieces_noires &= ~p->blancs.pions;
+			p->pieces_blanches &= ~(1ULL << source);
+			p->pieces_blanches |= (1ULL << dest);			
 		} else {
 			p->noirs.pions &= ~(1ULL << source);
 			p->noirs.pions |= (1ULL << dest);
-			p->blancs.pions &= ~p->noirs.pions;
-			p->blancs.cavaliers &= ~p->noirs.pions;
-			p->blancs.fous &= ~p->noirs.pions;
-			p->blancs.tours &= ~p->noirs.pions;
-			p->blancs.dame &= ~p->noirs.pions;
-			p->pieces_blanches &= ~p->noirs.pions;
+			p->pieces_noires &= ~(1ULL << source);
+			p->pieces_noires |= (1ULL << dest);
 		}
+	}
+	
+	if (cote == B) {
+		p->noirs.pions &= ~p->pieces_blanches;
+		p->blancs.cavaliers &= ~p->pieces_blanches;
+		p->noirs.fous &= ~p->pieces_blanches;
+		p->noirs.tours &= ~p->pieces_blanches;
+		p->noirs.dame &= ~p->pieces_blanches;
+		p->pieces_noires &= ~p->pieces_blanches;
+	} else {
+		p->blancs.pions &= ~p->pieces_noires;
+		p->blancs.cavaliers &= ~p->pieces_noires;
+		p->blancs.fous &= ~p->pieces_noires;
+		p->blancs.tours &= ~p->pieces_noires;
+		p->blancs.dame &= ~p->pieces_noires;
+		p->pieces_blanches &= ~p->pieces_noires;
 	}
 	
 	return REUSSITE;

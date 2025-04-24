@@ -86,9 +86,38 @@ int main(void) {
 	puts("##############################");
 	
 	coup c = COUP(pos("c7"), pos("c3"), P_PION, 0, 0, C_NORMAL);
+	printf("AVANT COUP : %lx\n", p.pieces_noires);
 	appliquer_coup(c, &p, N);
+	printf("APRES COUP : %lx\n", p.pieces_noires);
 	
 	afficher(p);
+	
+	nb_coups = 300;
+	p.cote = B;
+	lister_coups(p, &nb_coups, coups);
+	
+	printf("Nombre de coups : %d\n", 300 - nb_coups);
+	
+	for (int i = nb_coups; i < 300; i++) {
+		char src[3] = {0}, dst[3] = {0}, typ = 0, *type;
+		
+		src[0] = loc(COUP_SOURCE(coups[i])) >> 8;
+		src[1] = loc(COUP_SOURCE(coups[i])) & 0xff;
+		dst[0] = loc(COUP_DEST(coups[i])) >> 8;
+		dst[1] = loc(COUP_DEST(coups[i])) & 0xff;
+		typ = COUP_TYPE(coups[i]);
+		
+		switch (typ) {
+		case C_NORMAL: 
+			type = "Normal";
+			break;
+		case C_CAPTURE:
+			type = "Capture";
+			break;
+		}
+		
+		printf("Origine : %s, destination : %s, type : %s\n", src, dst, type);
+	}
 	
 	return 0;
 	
