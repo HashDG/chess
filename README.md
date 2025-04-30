@@ -9,6 +9,10 @@
 - reprise du système de coups. Passage du traitement algébrique à une structure.
 - et début de la fonction de liste des coups légaux par position
 
+## 1 mai 2025
+
+- masques des coups légaux des tours fonctionnent, plus qu'à les ajouter pour lister les coups légaux des tours 
+
 ## TODO
 - [ ] Tours
 - [ ] Fous
