@@ -5,15 +5,53 @@
 
 
 // 							0000000000000081
-bitboard vert[8]  = {0x8080808080808080, 0x4040404040404040, 0x2020202020202020, 0x1010101010101010, 0x0808080808080808, 0x0404040404040404, 0x0202020202020202, 0x0101010101010101};
+// Colonnes (fichiers)
+static const bitboard COLS[8] = {
+    0x8080808080808080ULL,  // File H
+    0x4040404040404040ULL, // File G
+    0x2020202020202020ULL, // File F
+    0x1010101010101010ULL, // File E
+    0x0808080808080808ULL, // File D
+    0x0404040404040404ULL, // File C
+    0x0202020202020202ULL, // File B
+    0x0101010101010101ULL // File A
+};
 
-#define TOUR_NORD(x) (vert[x%8] << (x/8 + 1))
-#define TOUR_SUD(x) (vert[x%8] >> (8-(x/8+1)))					 
-							 
-// bitboard hori[8]  = {0x00000000000000ff, 0x000000000000ff00, 0x0000000000ff0000, 0x00000000ff000000, 0x000000ff00000000, 0x0000ff0000000000, 0x00ff000000000000, 0xff00000000000000};
+// Gestion des masques de ligne
+static const bitboard MASQUE_LIG[8] = {0x7f, 0x3f, 0x1f, 0x0f, 0x07, 0x03, 0x01, 0x00};
 
-#define TOUR_EST(x) (((uint8_t)0xff << (8-x%8)) << ((x/8)*8) )
-#define TOUR_OUEST(x) (((uint8_t) 0xff >>(8-x%8)) << ((x/8)*8) )
+static inline bitboard TOUR_NORD(int x) {
+	int col = x % 8, lig = x / 8;
+	int shift = (lig + 1) * 8;
+	
+	if (shift >= 64) return 0;
+	else return COLS[col] << shift;
+}
+
+static inline bitboard TOUR_SUD(int x) {
+	int col = x % 8, lig = x / 8;
+	int shift = (8 - lig) * 8;
+	
+	if (shift >= 64) return 0;
+	else return COLS[col] >> shift;
+}
+
+static inline bitboard TOUR_EST(int x) {
+	int col = x % 8, lig = x / 8;
+	bitboard ligne = MASQUE_LIG[col];
+	
+	if (lig == 0) return ligne;
+	else return ligne << (lig * 8);
+}
+
+static inline bitboard TOUR_OUEST(int x) {
+	int col = x % 8, lig = x / 8;
+	uint8_t l = ~(MASQUE_LIG[col] | (1ULL << (7 - col)));
+	bitboard ligne = l;
+	
+	if (lig == 0) return ligne;
+	else return ligne << (lig * 8);
+}
 
 #endif /* TOUR_H */
 
@@ -21,4 +59,6 @@ bitboard vert[8]  = {0x8080808080808080, 0x4040404040404040, 0x2020202020202020,
  * cas 3 :
  * hori = 0xff
  *	res  = 0xe0
+ * si 0 - 7 => >> 8 * 8	=> col 0
+ * si 8 - 15 => >> 7 * 8
  */
