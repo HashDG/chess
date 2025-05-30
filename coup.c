@@ -29,17 +29,57 @@ int lister_coups(COUP_plateau_s p, int* taille, coup* coups) {
 
 
 int lister_coups_tours(COUP_plateau_s p, int cote, int* taille, coup* coups) {
-	bitboard temp, tours;
+	bitboard tours_tmp, tours, masque;
+	bitboard pieces_adverses;
+	bitboard pieces_joueur;
 	int source;
 	
 	if (cote == B) {
-		temp = tours = p.blancs.tours;
+		tours_tmp = tours = p.blancs.tours;
+		pieces_adverses = p.pieces_noires;
+		pieces_joueur = p.pieces_blanches;
 	} else {
-		temp = tours = p.noirs.tours;
+		tours_tmp = tours = p.noirs.tours;
+		pieces_adverses = p.pieces_blanches;
+		pieces_joueur = p.pieces_noires;
 	}
 	
-	source = pop_lsb(&temp);
+	while (tours_tmp) {
+		bitboard pa_tmp, pj_tmp;
+		int pa_closest = 0, pj_closest = 0;
+		
+		source = pop_lsb(&tours_tmp);
+		masque = TOUR_NORD(source);
+		pa_tmp = pieces_adverses & masque;
+		pj_tmp = pieces_joueur & masque;
+		
+		if (pa_tmp > 0) {
+			pa_closest = peek_lsb(&pa_tmp);
+		}
+		if (pj_tmp > 0) {
+			pj_closest = peek_lsb(&pj_tmp);
+		}
+		
+		printf("adverse plus proche : %d, joueur plus proche : %d\n", pa_closest, pj_closest);
+		printf("masque : %lx, source :%d\n", masque, source);
+		
+		/* Cas où la tour est bloquée par une pièce de sa couleur */
+		if (pa_closest > pj_closest) {	
+			for (int i = source + 8; i < pj_closest; i += 8) {
+				coups[--(*taille)] = COUP(source, i, P_TOUR, P_VIDE, P_VIDE, C_NORMAL);
+			}
+		/* Cas où la tour peut aller jusqu'à capturer un pion */
+		} else {
+			for (int i = source + 8; i < pa_closest; i += 8) {
+				coups[--(*taille)] = COUP(source, i, P_TOUR, P_VIDE, P_VIDE, C_NORMAL);
+			}
+			coups[--(*taille)] = COUP(source, pa_closest, P_TOUR, P_VIDE, P_VIDE, C_CAPTURE);
+		}
+		
+		
+	}
 	
+	/*
 	printf("Origine : %d, nord: %lx, sud : %lx, est : %lx, ouest : %lx\n", source, TOUR_NORD(source), TOUR_SUD(source), TOUR_EST(source), TOUR_OUEST(source));
 	source = 1;
 	printf("Origine : %d, nord: %lx, sud : %lx, est : %lx, ouest : %lx\n", source, TOUR_NORD(source), TOUR_SUD(source), TOUR_EST(source), TOUR_OUEST(source));
@@ -48,7 +88,7 @@ int lister_coups_tours(COUP_plateau_s p, int cote, int* taille, coup* coups) {
 	source = 56;
 	printf("Origine : %d, nord: %lx, sud : %lx, est : %lx, ouest : %lx\n", source, TOUR_NORD(source), TOUR_SUD(source), TOUR_EST(source), TOUR_OUEST(source));
 	source = 35;
-	printf("Origine : %d, nord: %lx, sud : %lx, est : %lx, ouest : %lx\n", source, TOUR_NORD(source), TOUR_SUD(source), TOUR_EST(source), TOUR_OUEST(source));
+	printf("Origine : %d, nord: %lx, sud : %lx, est : %lx, ouest : %lx\n", source, TOUR_NORD(source), TOUR_SUD(source), TOUR_EST(source), TOUR_OUEST(source));*/
 	
 	/************************************************************************** 
 	 * pour chaque tours de la bonne couleur
@@ -81,45 +121,45 @@ int lister_coups_pions(COUP_plateau_s p, int cote, int* taille, coup* coups) {
 		pieces_joueur = p.pieces_noires;
 	}
 	
-	printf("Dans lister coup : %x, %x\n", pieces_adverses, pieces_joueur);
+	// printf("Dans lister coup : %x, %x\n", pieces_adverses, pieces_joueur);
 	
 	while (temp && *taille > 0) {
 		source = pop_lsb(&temp);
 		if (cote == B) {			
-			avancement = ((pions & (1ULL << source)) << 8) & ~pieces_adverses;
+			avancement = ((pions & (1ULL << source)) << 8) & ~pieces_adverses & ~pieces_joueur;
 		} else {
-			printf("temp : %llu, source : %d\n", temp, source);
-			avancement = ((pions & (1ULL << source)) >> 8) & ~pieces_adverses;
+			// printf("temp : %llu, source : %d\n", temp, source);
+			avancement = ((pions & (1ULL << source)) >> 8) & ~pieces_adverses & ~pieces_joueur;
 		}
 		
 		if (avancement) {
 			dest = source + (cote == B ? 8 : -8);
 			
-			printf("Simple avancement : src %d, dst %d\n", source, dest);
+			// printf("Simple avancement : src %d, dst %d\n", source, dest);
 	
 			coups[--(*taille)] = COUP(source, dest, P_PION, P_VIDE, P_VIDE, C_NORMAL);
 	
 			if (cote == B && source >= 8 && source <= 15) {			
-				avancement = ((pions & (1ULL << source)) << 16) & ~pieces_adverses;
+				avancement = ((pions & (1ULL << source)) << 16) & ~pieces_adverses & ~pieces_joueur;
 			} else if (cote == N && source >= 48 && source <= 55) {
-				avancement = ((pions & (1ULL << source)) >> 16) & ~pieces_adverses;
+				avancement = ((pions & (1ULL << source)) >> 16) & ~pieces_adverses & ~pieces_joueur;
 			}
 			if (avancement) {
 				dest = source + (cote == B ? 16 : -16);
-				printf("Double avancement : src %d, dst %d\n", source, dest);
+				// printf("Double avancement : src %d, dst %d\n", source, dest);
 				coups[--(*taille)] = COUP(source, dest, P_PION, P_VIDE, P_VIDE, C_NORMAL);
 			}
 		}
 		
 		if (col(source) < 8) {
 			if (cote == B && lig(source) < 8) {			
-				avancement = ((pions & (1ULL << source)) << 9) & pieces_adverses;
+				avancement = ((pions & (1ULL << source)) << 9) & pieces_adverses & ~pieces_joueur;
 				if (avancement) {
 					dest = source + 9;
 					coups[--(*taille)] = COUP(source, dest, P_PION, P_VIDE, P_VIDE, C_CAPTURE);
 				}
 			} else if (cote == N && lig(source) > 0) {
-				avancement = ((pions & (1ULL << source)) >> 7) & pieces_adverses;
+				avancement = ((pions & (1ULL << source)) >> 7) & pieces_adverses & ~pieces_joueur;
 				if (avancement) {
 					dest = source - 7;
 					coups[--(*taille)] = COUP(source, dest, P_PION, P_VIDE, P_VIDE, C_CAPTURE);
@@ -128,13 +168,13 @@ int lister_coups_pions(COUP_plateau_s p, int cote, int* taille, coup* coups) {
 		}
 		if (col(source) > 0) {
 			if (cote == B && lig(source) < 8) {			
-				avancement = ((pions & (1ULL << source)) << 7) & pieces_adverses;
+				avancement = ((pions & (1ULL << source)) << 7) & pieces_adverses & ~pieces_joueur;
 				if (avancement) {
 					dest = source + 7;
 					coups[--(*taille)] = COUP(source, dest, P_PION, P_VIDE, P_VIDE, C_CAPTURE);
 				}
 			} else if (cote == N && lig(source) > 0) {
-				avancement = ((pions & (1ULL << source)) >> 9) & pieces_adverses;
+				avancement = ((pions & (1ULL << source)) >> 9) & pieces_adverses & ~pieces_joueur;
 				if (avancement) {
 					dest = source - 9;
 					coups[--(*taille)] = COUP(source, dest, P_PION, P_VIDE, P_VIDE, C_CAPTURE);
@@ -145,7 +185,7 @@ int lister_coups_pions(COUP_plateau_s p, int cote, int* taille, coup* coups) {
 	return REUSSITE;
 }
 
-int appliquer_coup(coup c, COUP_plateau_s* p, int cote) {
+COUP_plateau_s appliquer_coup(coup c, COUP_plateau_s p, int cote) {
 	int source, dest, piece, promo, capt, type;
 	bitboard tmp;
 	 
@@ -161,35 +201,47 @@ int appliquer_coup(coup c, COUP_plateau_s* p, int cote) {
 	switch (piece) {
 	case P_PION:
 		if (cote == B) {
-			p->blancs.pions &= ~(1ULL << source);
-			p->blancs.pions |= (1ULL << dest);
-			p->pieces_blanches &= ~(1ULL << source);
-			p->pieces_blanches |= (1ULL << dest);			
+			p.blancs.pions &= ~(1ULL << source);
+			p.blancs.pions |= (1ULL << dest);
+			p.pieces_blanches &= ~(1ULL << source);
+			p.pieces_blanches |= (1ULL << dest);			
 		} else {
-			p->noirs.pions &= ~(1ULL << source);
-			p->noirs.pions |= (1ULL << dest);
-			p->pieces_noires &= ~(1ULL << source);
-			p->pieces_noires |= (1ULL << dest);
+			p.noirs.pions &= ~(1ULL << source);
+			p.noirs.pions |= (1ULL << dest);
+			p.pieces_noires &= ~(1ULL << source);
+			p.pieces_noires |= (1ULL << dest);
+		}
+	case P_TOUR:
+		if (cote == B) {
+			p.blancs.tours &= ~(1ULL << source);
+			p.blancs.tours |= (1ULL << dest);
+			p.pieces_blanches &= ~(1ULL << source);
+			p.pieces_blanches |= (1ULL << dest);			
+		} else {
+			p.noirs.tours &= ~(1ULL << source);
+			p.noirs.tours |= (1ULL << dest);
+			p.pieces_noires &= ~(1ULL << source);
+			p.pieces_noires |= (1ULL << dest);
 		}
 	}
 	
 	if (cote == B) {
-		p->noirs.pions &= ~p->pieces_blanches;
-		p->blancs.cavaliers &= ~p->pieces_blanches;
-		p->noirs.fous &= ~p->pieces_blanches;
-		p->noirs.tours &= ~p->pieces_blanches;
-		p->noirs.dame &= ~p->pieces_blanches;
-		p->pieces_noires &= ~p->pieces_blanches;
+		p.noirs.pions &= ~p.pieces_blanches;
+		p.noirs.cavaliers &= ~p.pieces_blanches;
+		p.noirs.fous &= ~p.pieces_blanches;
+		p.noirs.tours &= ~p.pieces_blanches;
+		p.noirs.dame &= ~p.pieces_blanches;
+		p.pieces_noires &= ~p.pieces_blanches;
 	} else {
-		p->blancs.pions &= ~p->pieces_noires;
-		p->blancs.cavaliers &= ~p->pieces_noires;
-		p->blancs.fous &= ~p->pieces_noires;
-		p->blancs.tours &= ~p->pieces_noires;
-		p->blancs.dame &= ~p->pieces_noires;
-		p->pieces_blanches &= ~p->pieces_noires;
+		p.blancs.pions &= ~p.pieces_noires;
+		p.blancs.cavaliers &= ~p.pieces_noires;
+		p.blancs.fous &= ~p.pieces_noires;
+		p.blancs.tours &= ~p.pieces_noires;
+		p.blancs.dame &= ~p.pieces_noires;
+		p.pieces_blanches &= ~p.pieces_noires;
 	}
 	
-	return REUSSITE;
+	return p;
 }
 
 int lig(int pos) {

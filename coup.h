@@ -68,6 +68,6 @@ typedef struct {
 #define N 	1
 
 int lister_coups(COUP_plateau_s p, int* taille, coup* coups);
-int appliquer_coup(coup, COUP_plateau_s*, int); 
+COUP_plateau_s appliquer_coup(coup, COUP_plateau_s, int); 
 
 #endif /* COUP_H */
