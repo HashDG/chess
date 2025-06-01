@@ -13,7 +13,7 @@
 int premier_bit(bitboard);
 int dernier_bit(bitboard);
 char recuperer(int);
-int pos(char*);
+int string_to_pos(char*);
 int placer(char, int);
 int retirer(char, int);
 bool existe(bitboard, int);
@@ -47,16 +47,16 @@ int main(void) {
 	puts("Appliquer un coup pour la tour");
 	puts("##############################");
 	
-	coup c = COUP(pos("a1"), pos("a3"), P_TOUR, 0, 0, C_NORMAL);	
+	coup c = COUP(string_to_pos("a1"), string_to_pos("a3"), P_TOUR, 0, 0, C_NORMAL);	
 	p = appliquer_coup(c, p, B);
 	
-	c = COUP(pos("a7"), pos("a5"), P_PION, 0, 0, C_NORMAL);
+	c = COUP(string_to_pos("a7"), string_to_pos("a5"), P_PION, 0, 0, C_NORMAL);
 	p = appliquer_coup(c, p, N);
 	
-	c = COUP(pos("a2"), pos("a5"), P_PION, 0, 0, C_NORMAL);
+	c = COUP(string_to_pos("a2"), string_to_pos("a5"), P_PION, 0, 0, C_NORMAL);
 	p = appliquer_coup(c, p, B);
 	
-	c = COUP(pos("h1"), pos("h4"), P_TOUR, 0, 0, C_NORMAL);	
+	c = COUP(string_to_pos("h1"), string_to_pos("h4"), P_TOUR, 0, 0, C_NORMAL);	
 	p = appliquer_coup(c, p, B);
 	afficher(p);
 	
@@ -91,11 +91,7 @@ int main(void) {
 	return 0;
 }
 
-
-/*
- *	a1 : 0, b1 : 1, c1 : 2 ... h8 : 63
- */
-int pos(char* loc) {
+int string_to_pos(char* loc) {
 	char lettre = loc[0], chiffre = loc[1];
 	
 	if (chiffre >= '1' && chiffre <= '8') {

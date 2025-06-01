@@ -8,6 +8,7 @@
 
 int lister_coups_pions(COUP_plateau_s plateau, int cote, int* taille, coup* coups);
 int lister_coups_tours(COUP_plateau_s plateau, int cote, int* taille, coup* coups);
+int lister_coups_fous(COUP_plateau_s plateau, int cote, int* taille, coup* coups);
 int peek_lsb(bitboard*);
 int pop_lsb(bitboard*);
 int peek_msb(bitboard*);
@@ -25,10 +26,17 @@ int lister_coups(COUP_plateau_s p, int* taille, coup* coups) {
 		resultat = lister_coups_tours(p, p.cote, taille, coups);
 	}
 	
+	if (resultat == REUSSITE) {
+		resultat = lister_coups_fous(p, p.cote, taille, coups);
+	}
+	
 	return resultat;
 }
 
-
+int lister_coups_fous(COUP_plateau_s p, int cote, int* taille, coup* coups) {
+	
+	return REUSSITE;
+}
 
 int lister_coups_tours(COUP_plateau_s p, int cote, int* taille, coup* coups) {
 	bitboard tours_tmp, tours, masque;

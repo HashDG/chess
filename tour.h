@@ -3,9 +3,6 @@
 
 #include "coup.h"
 
-
-// 							0000000000000081
-// Colonnes (fichiers)
 static const bitboard COLS[8] = {
     0x0101010101010101ULL, // File A
     0x0202020202020202ULL, // File B
@@ -17,7 +14,6 @@ static const bitboard COLS[8] = {
     0x8080808080808080ULL  // File H
 };
 
-// Gestion des masques de ligne
 static const bitboard MASQUE_LIG[8] = {0x7f, 0x3f, 0x1f, 0x0f, 0x07, 0x03, 0x01, 0x00};
 
 static inline bitboard TOUR_NORD(int x) {
@@ -54,11 +50,3 @@ static inline bitboard TOUR_EST(int x) {
 }
 
 #endif /* TOUR_H */
-
-/*
- * cas 3 :
- * hori = 0xff
- *	res  = 0xe0
- * si 0 - 7 => >> 8 * 8	=> col 0
- * si 8 - 15 => >> 7 * 8
- */

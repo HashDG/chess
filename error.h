@@ -1,14 +1,12 @@
 #ifndef ERROR_H
 #define ERROR_H
 
-// Codes d'erreur (valeurs négatives)
 #define REUSSITE           	0
 #define ERR_DESTINATION   	-1
 #define ERR_ORIGINE       	-2
 #define ERR_FORMAT			-3
 #define ERR_UNKNOWN       	-99
 
-// Fonction inline pour obtenir une chaîne descriptive
 static inline const char *error(int errcode) {
     switch (errcode) {
         case REUSSITE:         	return "Aucune erreur";
