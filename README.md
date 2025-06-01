@@ -11,10 +11,14 @@
 
 ## 1 mai 2025
 
-- masques des coups légaux des tours fonctionnent, plus qu'à les ajouter pour lister les coups légaux des tours 
+- masques des coups légaux des tours fonctionnent, plus qu'à les ajouter pour lister les coups légaux des tours
+
+## 1 juin 2025
+
+- les tours peuvent bouger, maintenant les fous
 
 ## TODO
-- [ ] Tours
+- [X] Tours
 - [ ] Fous
 - [ ] Reine
 - [ ] Roi
