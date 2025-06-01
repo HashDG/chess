@@ -69,5 +69,6 @@ typedef struct {
 
 int lister_coups(COUP_plateau_s p, int* taille, coup* coups);
 COUP_plateau_s appliquer_coup(coup, COUP_plateau_s, int); 
+char* posToString(int a, char* res);
 
 #endif /* COUP_H */

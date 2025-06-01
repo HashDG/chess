@@ -17,7 +17,6 @@ int pos(char*);
 int placer(char, int);
 int retirer(char, int);
 bool existe(bitboard, int);
-uint16_t loc(int);
 
 int main(void) {
 	
@@ -40,6 +39,7 @@ int main(void) {
 	
 	int nb_coups = 300;
 	coup coups[300] = {0};
+	char position[3];
 	
 	afficher(p);
 	
@@ -47,14 +47,14 @@ int main(void) {
 	puts("Appliquer un coup pour la tour");
 	puts("##############################");
 	
-	
-	coup c = COUP(pos("a1"), pos("a3"), P_TOUR, 0, 0, C_NORMAL);
-	printf("pieces blanches avant : %lx\n", p.pieces_blanches);
-	
+	coup c = COUP(pos("a1"), pos("a3"), P_TOUR, 0, 0, C_NORMAL);	
 	p = appliquer_coup(c, p, B);
 	
-	printf("pieces blanches après : %lx\n", p.pieces_blanches);
+	c = COUP(pos("a7"), pos("a5"), P_PION, 0, 0, C_NORMAL);
+	p = appliquer_coup(c, p, N);
 	
+	c = COUP(pos("a2"), pos("a5"), P_PION, 0, 0, C_NORMAL);
+	p = appliquer_coup(c, p, B);
 	afficher(p);
 	
 	nb_coups = 300;
@@ -65,11 +65,10 @@ int main(void) {
 	
 	for (int i = nb_coups; i < 300; i++) {
 		char src[3] = {0}, dst[3] = {0}, typ = 0, *type, piece = 0;
+				
+		posToString(COUP_SOURCE(coups[i]), src);
+		posToString(COUP_DEST(coups[i]), dst);
 		
-		src[0] = loc(COUP_SOURCE(coups[i])) >> 8;
-		src[1] = loc(COUP_SOURCE(coups[i])) & 0xff;
-		dst[0] = loc(COUP_DEST(coups[i])) >> 8;
-		dst[1] = loc(COUP_DEST(coups[i])) & 0xff;
 		typ = COUP_TYPE(coups[i]);
 		piece = COUP_PIECE(coups[i]);
 		
@@ -82,7 +81,7 @@ int main(void) {
 			break;
 		}
 		
-		printf("Origine : %s, destination : %s, piece : %d\n", src, dst, piece);
+		printf("Origine : %s, destination : %s, piece : %d, type : %s\n", src, dst, piece, type);
 	}
 	
 	return 0;
@@ -104,13 +103,6 @@ int pos(char* loc) {
 	}
 	return -1;
 }
-
-uint16_t loc(int a) {
-	char lettre = a % 8 + 'a', chiffre = a / 8 + '1';
-	return lettre << 8 | chiffre;
-}
-
-
 
 
 
