@@ -55,6 +55,9 @@ int main(void) {
 	
 	c = COUP(pos("a2"), pos("a5"), P_PION, 0, 0, C_NORMAL);
 	p = appliquer_coup(c, p, B);
+	
+	c = COUP(pos("h1"), pos("h4"), P_TOUR, 0, 0, C_NORMAL);	
+	p = appliquer_coup(c, p, B);
 	afficher(p);
 	
 	nb_coups = 300;
@@ -80,8 +83,9 @@ int main(void) {
 			type = "Capture";
 			break;
 		}
-		
-		printf("Origine : %s, destination : %s, piece : %d, type : %s\n", src, dst, piece, type);
+		if (piece == P_TOUR) {
+			printf("Origine : %s, destination : %s, piece : %d, type : %s\n", src, dst, piece, type);
+		}
 	}
 	
 	return 0;

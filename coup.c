@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <limits.h>
 
 #include "coup.h"
 #include "error.h"
@@ -51,60 +52,170 @@ int lister_coups_tours(COUP_plateau_s p, int cote, int* taille, coup* coups) {
 		int pa_closest = 0, pj_closest = 0;
 		
 		source = pop_lsb(&tours_tmp);
+		
+		/*******************NORD**********************************/
+		
 		masque = TOUR_NORD(source);
 		pa_tmp = pieces_adverses & masque;
 		pj_tmp = pieces_joueur & masque;
 		
-		printf("source : %s, masque: %lx\n", posToString(source, position), masque);
-		printf("pièces adverses masquées : %lx\n", pa_tmp);
-		printf("pièces joueur masquées : %lx\n", pj_tmp);
-		
 		if (pa_tmp > 0) {
 			pa_closest = peek_lsb(&pa_tmp);
+		} else {
+			pa_closest = -1;
 		}
 		if (pj_tmp > 0) {
 			pj_closest = peek_lsb(&pj_tmp);
+		} else {
+			pj_closest = -1;
 		}
 		
-		printf("pièce adverse la plus proche : %s\n", posToString(pa_closest, position));
+		puts("*******************NORD");
+		printf("source : %s\n", posToString(source, position));
+		printf("masque : %lx\n", masque);
+		printf("plus proche adversaire : %s\n", posToString(pa_closest, position));
+		printf("plus proche allié : %s\n", posToString(pj_closest, position));
 		
 		/* Cas où la tour est bloquée par une pièce de sa couleur */
-		if (pa_closest > pj_closest && pj_closest > 0) {
+		if (pa_closest > pj_closest && pj_closest >= 0) {
 			for (int i = source + 8; i < pj_closest; i += 8) {
 				coups[--(*taille)] = COUP(source, i, P_TOUR, P_VIDE, P_VIDE, C_NORMAL);
 			}
 		/* Cas où la tour peut aller jusqu'à capturer un pion */
-		} else {
+		} else if (pa_closest >= 0) {
 			for (int i = source + 8; i < pa_closest; i += 8) {
 				coups[--(*taille)] = COUP(source, i, P_TOUR, P_VIDE, P_VIDE, C_NORMAL);
 			}
 			coups[--(*taille)] = COUP(source, pa_closest, P_TOUR, P_VIDE, P_VIDE, C_CAPTURE);
+		} else {
+			for (int i = source + 8; i <= 56 + col(source) - 'a'; i += 8) {
+				coups[--(*taille)] = COUP(source, i, P_TOUR, P_VIDE, P_VIDE, C_NORMAL);
+			}
+		}
+		
+		/*******************EST**********************************/
+		
+		masque = TOUR_EST(source);
+		pa_tmp = pieces_adverses & masque;
+		pj_tmp = pieces_joueur & masque;
+		
+		if (pa_tmp > 0) {
+			pa_closest = peek_lsb(&pa_tmp);
+		} else {
+			pa_closest = -1;
+		}
+		if (pj_tmp > 0) {
+			pj_closest = peek_lsb(&pj_tmp);
+		} else {
+			pj_closest = -1;
+		}
+		
+		puts("*******************EST");
+		printf("source : %s\n", posToString(source, position));
+		printf("masque : %lx\n", masque);
+		printf("plus proche adversaire : %s\n", posToString(pa_closest, position));
+		printf("plus proche allié : %s\n", posToString(pj_closest, position));
+		
+		/* Cas où la tour est bloquée par une pièce de sa couleur */
+		if (pa_closest > pj_closest && pj_closest >= 0) {
+			for (int i = source + 1; i < pj_closest; i += 1) {
+				coups[--(*taille)] = COUP(source, i, P_TOUR, P_VIDE, P_VIDE, C_NORMAL);
+			}
+		/* Cas où la tour peut aller jusqu'à capturer un pion */
+		} else if (pa_closest >= 0) {
+			for (int i = source + 1; i < pa_closest; i += 1) {
+				coups[--(*taille)] = COUP(source, i, P_TOUR, P_VIDE, P_VIDE, C_NORMAL);
+			}
+			coups[--(*taille)] = COUP(source, pa_closest, P_TOUR, P_VIDE, P_VIDE, C_CAPTURE);
+		/* Cas où il n'y a pas de limite */
+		} else {
+			for (int i = source + 1; i <= 7 + (lig(source) - 1) * 8 ; i += 1) {
+				coups[--(*taille)] = COUP(source, i, P_TOUR, P_VIDE, P_VIDE, C_NORMAL);
+			}
+		}
+		
+		/*******************SUD**********************************/
+		
+		masque = TOUR_SUD(source);
+		pa_tmp = pieces_adverses & masque;
+		pj_tmp = pieces_joueur & masque;
+		
+		if (pa_tmp > 0) {
+			pa_closest = peek_msb(&pa_tmp);
+		} else {
+			pa_closest = -1;
+		}
+		if (pj_tmp > 0) {
+			pj_closest = peek_msb(&pj_tmp);
+		} else {
+			pj_closest = -1;
+		}
+		
+		puts("*******************SUD");
+		printf("source : %s\n", posToString(source, position));
+		printf("masque : %lx\n", masque);
+		printf("plus proche adversaire : %s\n", posToString(pa_closest, position));
+		printf("plus proche allié : %s\n", posToString(pj_closest, position));
+		
+		/* Cas où la tour est bloquée par une pièce de sa couleur */
+		if (pa_closest < pj_closest && pj_closest >= 0) {
+			for (int i = source - 8; i > pj_closest; i -= 8) {
+				coups[--(*taille)] = COUP(source, i, P_TOUR, P_VIDE, P_VIDE, C_NORMAL);
+			}
+		/* Cas où la tour peut aller jusqu'à capturer un pion */
+		} else if (pa_closest >= 0) {
+			for (int i = source - 8; i > pa_closest; i -= 8) {
+				coups[--(*taille)] = COUP(source, i, P_TOUR, P_VIDE, P_VIDE, C_NORMAL);
+			}
+			coups[--(*taille)] = COUP(source, pa_closest, P_TOUR, P_VIDE, P_VIDE, C_CAPTURE);
+		} else {
+			for (int i = source - 8; i >= 0 + col(source) - 'a'; i -= 8) {
+				coups[--(*taille)] = COUP(source, i, P_TOUR, P_VIDE, P_VIDE, C_NORMAL);
+			}
+		}
+		
+		/*******************OUEST**********************************/
+		
+		masque = TOUR_OUEST(source);
+		pa_tmp = pieces_adverses & masque;
+		pj_tmp = pieces_joueur & masque;
+		
+		if (pa_tmp > 0) {
+			pa_closest = peek_msb(&pa_tmp);
+		} else {
+			pa_closest = -1;
+		}
+		if (pj_tmp > 0) {
+			pj_closest = peek_msb(&pj_tmp);
+		} else {
+			pj_closest = -1;
+		}
+		
+		puts("*******************OUEST");
+		printf("source : %s\n", posToString(source, position));
+		printf("masque : %lx\n", masque);
+		printf("masque ALLIÉS : %lx\n", pj_tmp);
+		printf("plus proche adversaire : %s\n", posToString(pa_closest, position));
+		printf("plus proche allié : %s\n", posToString(pj_closest, position));
+		
+		/* Cas où la tour est bloquée par une pièce de sa couleur */
+		if (pa_closest < pj_closest && pj_closest >= 0) {
+			for (int i = source - 1; i > pj_closest; i -= 1) {
+				coups[--(*taille)] = COUP(source, i, P_TOUR, P_VIDE, P_VIDE, C_NORMAL);
+			}
+		/* Cas où la tour peut aller jusqu'à capturer un pion */
+		} else if (pa_closest >= 0) {
+			for (int i = source - 1; i > pa_closest; i -= 1) {
+				coups[--(*taille)] = COUP(source, i, P_TOUR, P_VIDE, P_VIDE, C_NORMAL);
+			}
+			coups[--(*taille)] = COUP(source, pa_closest, P_TOUR, P_VIDE, P_VIDE, C_CAPTURE);
+		} else {
+			for (int i = source - 1; i >= (lig(source) - 1) * 8 ; i -= 1) {
+				coups[--(*taille)] = COUP(source, i, P_TOUR, P_VIDE, P_VIDE, C_NORMAL);
+			}
 		}
 	}
-	
-	/*
-	printf("Origine : %d, nord: %lx, sud : %lx, est : %lx, ouest : %lx\n", source, TOUR_NORD(source), TOUR_SUD(source), TOUR_EST(source), TOUR_OUEST(source));
-	source = 1;
-	printf("Origine : %d, nord: %lx, sud : %lx, est : %lx, ouest : %lx\n", source, TOUR_NORD(source), TOUR_SUD(source), TOUR_EST(source), TOUR_OUEST(source));
-	source = 24;
-	printf("Origine : %d, nord: %lx, sud : %lx, est : %lx, ouest : %lx\n", source, TOUR_NORD(source), TOUR_SUD(source), TOUR_EST(source), TOUR_OUEST(source));
-	source = 56;
-	printf("Origine : %d, nord: %lx, sud : %lx, est : %lx, ouest : %lx\n", source, TOUR_NORD(source), TOUR_SUD(source), TOUR_EST(source), TOUR_OUEST(source));
-	source = 35;
-	printf("Origine : %d, nord: %lx, sud : %lx, est : %lx, ouest : %lx\n", source, TOUR_NORD(source), TOUR_SUD(source), TOUR_EST(source), TOUR_OUEST(source));*/
-	
-	/************************************************************************** 
-	 * pour chaque tours de la bonne couleur
-	 * 	traitement par direction:
-	 *			-> charger le masque d'orientation
-	 *			-> masque sur tous les pions adverses et sur mes pièces 
-	 *			-> peek_lsb / msb sur les masques
-	 *			boucle insertion dans les coups
-	 *
-	 *
-	 * fin-pour
-	 */
-	 return REUSSITE;
+	return REUSSITE;
 }
 
 int lister_coups_pions(COUP_plateau_s p, int cote, int* taille, coup* coups) {
@@ -174,65 +285,6 @@ int lister_coups_pions(COUP_plateau_s p, int cote, int* taille, coup* coups) {
 	return REUSSITE;
 }
 
-/*
-		source = pop_lsb(&temp);
-		if (cote == B) {			
-			avancement = ((pions & (1ULL << source)) << 8) & ~pieces_adverses & ~pieces_joueur;
-		} else {
-			// printf("temp : %llu, source : %d\n", temp, source);
-			avancement = ((pions & (1ULL << source)) >> 8) & ~pieces_adverses & ~pieces_joueur;
-		}
-		
-		if (avancement) {
-			dest = source + (cote == B ? 8 : -8);
-			
-			// printf("Simple avancement : src %d, dst %d\n", source, dest);
-	
-			coups[--(*taille)] = COUP(source, dest, P_PION, P_VIDE, P_VIDE, C_NORMAL);
-	
-			if (cote == B && source >= 8 && source <= 15) {			
-				avancement = ((pions & (1ULL << source)) << 16) & ~pieces_adverses & ~pieces_joueur;
-			} else if (cote == N && source >= 48 && source <= 55) {
-				avancement = ((pions & (1ULL << source)) >> 16) & ~pieces_adverses & ~pieces_joueur;
-			}
-			if (avancement) {
-				dest = source + (cote == B ? 16 : -16);
-				// printf("Double avancement : src %d, dst %d\n", source, dest);
-				coups[--(*taille)] = COUP(source, dest, P_PION, P_VIDE, P_VIDE, C_NORMAL);
-			}
-		}
-		
-		if (col(source) < 8) {
-			if (cote == B && lig(source) < 8) {			
-				avancement = ((pions & (1ULL << source)) << 9) & pieces_adverses & ~pieces_joueur;
-				if (avancement) {
-					dest = source + 9;
-					coups[--(*taille)] = COUP(source, dest, P_PION, P_VIDE, P_VIDE, C_CAPTURE);
-				}
-			} else if (cote == N && lig(source) > 0) {
-				avancement = ((pions & (1ULL << source)) >> 7) & pieces_adverses & ~pieces_joueur;
-				if (avancement) {
-					dest = source - 7;
-					coups[--(*taille)] = COUP(source, dest, P_PION, P_VIDE, P_VIDE, C_CAPTURE);
-				}
-			}
-		}
-		if (col(source) > 0) {
-			if (cote == B && lig(source) < 8) {			
-				avancement = ((pions & (1ULL << source)) << 7) & pieces_adverses & ~pieces_joueur;
-				if (avancement) {
-					dest = source + 7;
-					coups[--(*taille)] = COUP(source, dest, P_PION, P_VIDE, P_VIDE, C_CAPTURE);
-				}
-			} else if (cote == N && lig(source) > 0) {
-				avancement = ((pions & (1ULL << source)) >> 9) & pieces_adverses & ~pieces_joueur;
-				if (avancement) {
-					dest = source - 9;
-					coups[--(*taille)] = COUP(source, dest, P_PION, P_VIDE, P_VIDE, C_CAPTURE);
-				}
-			}
-		}
-*/
 COUP_plateau_s appliquer_coup(coup c, COUP_plateau_s p, int cote) {
 	int source, dest, piece, promo, capt, type;
 	bitboard tmp;
@@ -345,9 +397,15 @@ int pop_msb(bitboard* b) {
 }
 
 char* posToString(int a, char* res) {
-	char lettre = a % 8 + 'a', chiffre = a / 8 + '1';
-	res[0] = lettre;
-	res[1] = chiffre;
-	res[2] = '\0'; 
+	if (a >= 0 && a <= 64) {
+		char lettre = a % 8 + 'a', chiffre = a / 8 + '1';
+		res[0] = lettre;
+		res[1] = chiffre;
+		res[2] = '\0'; 
+	} else {
+		res[0] = 'I';
+		res[1] = 'N';
+		res[2] = 'C';
+	}
 	return res;
 }

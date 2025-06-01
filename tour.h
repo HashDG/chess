@@ -36,7 +36,7 @@ static inline bitboard TOUR_SUD(int x) {
 	else return COLS[col] >> shift;
 }
 
-static inline bitboard TOUR_EST(int x) {
+static inline bitboard TOUR_OUEST(int x) {
 	int col = x % 8, lig = x / 8;
 	bitboard ligne = MASQUE_LIG[col];
 	
@@ -44,7 +44,7 @@ static inline bitboard TOUR_EST(int x) {
 	else return ligne << (lig * 8);
 }
 
-static inline bitboard TOUR_OUEST(int x) {
+static inline bitboard TOUR_EST(int x) {
 	int col = x % 8, lig = x / 8;
 	uint8_t l = ~(MASQUE_LIG[col] | (1ULL << (7 - col)));
 	bitboard ligne = l;
